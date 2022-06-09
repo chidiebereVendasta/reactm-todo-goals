@@ -35,6 +35,8 @@ function generateID () {
 const REMOVE_TODO = "REMOVE_TODO"
 const  ADD_TODO = "ADD_TODO"
 const ADD_GOAL =  "ADD_GOAL"
+const REMOVE_GOAL =  "REMOVE_GOAL"
+const TOGGLE_GOAL =  "TOGGLE_GOAL"
 
 
 //Reducers: It helps us perform an update to the state. The reducer must be a pure function
@@ -50,6 +52,10 @@ function todoReducer(state = [], action){
 function goalReducer(state = [], action){
     if(action.type === ADD_GOAL){
         return state.concat([action.goal])
+    }else if(action.type === REMOVE_GOAL){
+        return state.filter(goal => goal.id !== action.id)
+    }else if(action.type === TOGGLE_GOAL){
+        return state.map(goal => goal.id !== action.id ? goal : Object.assign({}, goal, { complete: !goal.complete }))
     }
     return state
 }
@@ -57,15 +63,7 @@ function goalReducer(state = [], action){
 const store = Redux.createStore(Redux.combineReducers({
     todos: todoReducer,
     goals: goalReducer,
- }), Redux.applyMiddleware(validateTodoAndGoalReduxMiddleware))
-
-const unsubscribe = store.subscribe(() => {
-    console.log("the new state is: ", store.getState())
-})
-
-store.subscribe(() => {
-    console.log("the state changed")
-})
+ }), Redux.applyMiddleware(validateTodoAndGoalReduxMiddleware, logActionAndState))
 
 store.subscribe(() => {
     //reset the lists
@@ -140,6 +138,20 @@ function removeTodo(id){
     }
 }
 
+function removeGoal(id){
+    return {
+        type: REMOVE_GOAL,
+        id
+    }
+}
+
+function toggleGoal(id){
+    return {
+        type: TOGGLE_GOAL,
+        id
+    }
+}
+
 
 
 
@@ -183,6 +195,15 @@ function removeTodo(id){
 
                 return next(action) //the next middleware or your action being dispatched
             }
+        }
+    }
+
+    function logActionAndState(){
+        return next => action => {
+            const {getState} = store
+            console.log("Current state is", getState())
+            console.log("state action", action);
+            return next(action)
         }
     }
     // const rrr = (store) => (next) => (action) => {
@@ -244,6 +265,23 @@ function removeTodo(id){
         // }) ,store.dispatch)
     }
 
+    function toggleGoalCompleted(id){
+
+
+        store.dispatch(toggleGoal(id))
+    }
+
+    function createRemoveButton(goalId) {
+        const removeGoalButton = document.createElement('button')
+        removeGoalButton.innerHTML = 'X'
+
+        removeGoalButton.addEventListener("click", function() {
+            store.dispatch(removeGoal(goalId))
+        })
+
+        return removeGoalButton
+    }
+
     function addTodoToDom(todo){
         const node = document.createElement('li') //<li></li>
       const text = document.createTextNode(todo.todoName) //whateverName
@@ -254,9 +292,16 @@ function removeTodo(id){
     }
 
     function addGaolToDom(goal){
-        const node = document.createElement('li') 
-      const text = document.createTextNode(goal.goalName) 
+        const node = document.createElement('li')
+        const text = document.createElement('span')
+      text.innerHTML = goal.goalName
       node.appendChild(text) 
+      node.appendChild(createRemoveButton(goal.id))
+
+      node.style.textDecoration = goal.complete ? "line-through" : "none"
+      node.style.color = goal.complete ? "green" : "red"
+
+      text.addEventListener("click", () => toggleGoalCompleted(goal.id));
 
       document.getElementById('goals')
         .append(node) 
