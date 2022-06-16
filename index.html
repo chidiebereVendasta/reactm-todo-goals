@@ -8,53 +8,126 @@
     <script type="text/javascript" src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src='https://unpkg.com/babel-standalone@6.15.0/babel.min.js'></script>
-<!--    <script src="app.js" defer></script> &lt;!&ndash; defer attribute helps to find our js file and execute it if found. Our code can be viewed in the dev tool browser&ndash;&gt;-->
+   <script src="app.js" defer></script> 
 </head>
 <body>
     <div id="app"></div>
     <script type="text/babel">
-        function Todos() {
-            return (
-                <ul>
-                    <li>Todo 1</li>
-                    <li>Todo 2</li>
-                    <li>Todo 3</li>
-                </ul>
-            );
+        function List(props){
+            const { items, removeItem } = props
+
+            return <ul>
+                {items.map((item => (
+                    <li key={item.id}>
+                        <span>{item.todoName||item.goalName}</span>
+                        {removeItem && <button onClick={() => removeItem(item)}>X</button>}
+                    </li>
+                )))}
+            </ul>
         }
-        function Goals() {
-            return (
-                <ul>
-                    <li>Goal 1</li>
-                    <li>Goal 2</li>
-                    <li>Goal 3</li>
-                </ul>
-            );
-        }
-        function App() {
+
+        function Todos(props) {
+            const { dispatch, todos } = props
+
+            const inputRef = React.useRef(null);
+            const addTodo = (e) => {
+                e.preventDefault();
+                const newTodo = inputRef.current.value
+                inputRef.current.value = '';
+
+                dispatch(createTodo({
+                    id: generateID(),
+                    todoName:  newTodo,
+                    done: false
+                }))
+            }
+
             return (
                 <div>
-                    <Todos />
-                    <Goals />
+                    <h1>Todos</h1>
+                    <input ref={inputRef} placeholder="Add a todo" />
+                    <button type="button" onClick={addTodo}>Click Me!</button>
+                    <List items={todos}/>
+                </div>
+            );
+        }
+        function Goals({ dispatch, goals }) {
+
+            const inputRef = React.useRef(null);
+            const addGoal = (e) => {
+                e.preventDefault();
+
+                const newGoal = inputRef.current.value
+                inputRef.current.value = '';
+
+                dispatch(createGoal({
+                    id: generateID(),
+                    goalName:  newGoal,
+                    done: false
+                }))
+            }
+
+            const handleRemoveItem = React.useCallback((item) => {
+
+             dispatch(removeGoal(item.id))
+            },[dispatch])
+
+            return (
+                <div>
+                    <h1>Goals</h1>
+                    <input ref={ref => inputRef.current = ref} placeholder="Add a goal" />
+                    <button type="button" onClick={addGoal}>Click Me!</button>
+                    <List items={goals} removeItem={handleRemoveItem}/>
+                </div>
+            );
+        }
+        function App({ store }) {
+            const { todos, goals } = store.getState()
+            const [state, setState] = React.useState({
+                todos, 
+                goals
+            })
+
+            React.useEffect(() => {
+                
+                store.subscribe(() => {
+                    const { todos, goals } = store.getState()
+
+                    setState({
+                        todos, 
+                        goals
+                    })
+                })
+                return () => {
+                    store.unsubscribe();
+                }
+            }, [])
+
+            return (
+                <div>
+                    <Todos todos={state.todos} dispatch={store.dispatch} />
+                    <Goals goals={state.goals} dispatch={store.dispatch}/>
                 </div>
             );
         }
 
-        ReactDOM.render(<App />, document.querySelector('#app'));
+        ReactDOM.render(<App store={store} />, document.querySelector('#app'));
     </script>
+
+<hr />
     <!-- For our Todos-->
-<!--    <div>-->
-<!--        <h1>Todos</h1>-->
-<!--        <input placeholder="Add a todo" id="todo-Input" />-->
-<!--        <button type="button" id="add-todo-btn">Click Me!</button>-->
-<!--        <ul id="todos"></ul>-->
-<!--    </div>-->
+   <div>
+       <h1>Todos</h1>
+       <input placeholder="Add a todo" id="todo-Input" />
+       <button type="button" id="add-todo-btn">Click Me!</button>
+       <ul id="todos"></ul>
+   </div>
 <!--    &lt;!&ndash; For our Goals&ndash;&gt;-->
-<!--    <div>-->
-<!--        <h1>Goals</h1>-->
-<!--        <input placeholder="Add a goal" id="goal-Input" />-->
-<!--        <button type="button" id="add-goal-btn">Click Me!</button>-->
-<!--        <ul id="goals"></ul>-->
-<!--    </div>-->
+   <div>
+       <h1>Goals</h1>
+       <input placeholder="Add a goal" id="goal-Input" />
+       <button type="button" id="add-goal-btn">Click Me!</button>
+       <ul id="goals"></ul>
+   </div>
 </body>
 </html>
