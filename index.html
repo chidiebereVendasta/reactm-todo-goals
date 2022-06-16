@@ -14,15 +14,17 @@
     <div id="app"></div>
     <script type="text/babel">
         function List(props){
-            const { items, removeItem } = props
+            const { items, removeItem, toggleItem } = props
 
             return <ul>
-                {items.map((item => (
+                {items.map((item =>
+                {
+                    return (
                     <li key={item.id}>
-                        <span>{item.todoName||item.goalName}</span>
+                        <span style={{ textDecoration: item.complete ? "line-through" : "none", color: item.complete ? "green": "red" }} onClick={() => toggleItem(item)}>{item.todoName||item.goalName}</span>
                         {removeItem && <button onClick={() => removeItem(item)}>X</button>}
                     </li>
-                )))}
+                )}))}
             </ul>
         }
 
@@ -72,12 +74,17 @@
              dispatch(removeGoal(item.id))
             },[dispatch])
 
+            const handleToggleItem = React.useCallback((item) => {
+
+                dispatch(toggleGoal(item.id))
+            },[dispatch])
+
             return (
                 <div>
                     <h1>Goals</h1>
                     <input ref={ref => inputRef.current = ref} placeholder="Add a goal" />
                     <button type="button" onClick={addGoal}>Click Me!</button>
-                    <List items={goals} removeItem={handleRemoveItem}/>
+                    <List items={goals} removeItem={handleRemoveItem} toggleItem={handleToggleItem}/>
                 </div>
             );
         }
