@@ -21,7 +21,17 @@
                 {
                     return (
                     <li key={item.id}>
-                        <span style={{ textDecoration: item.complete ? "line-through" : "none", color: item.complete ? "green": "red" }} onClick={() => toggleItem(item)}>{item.todoName||item.goalName}</span>
+                        <span 
+                            style={{ 
+                                textDecoration: item.complete ? "line-through" : "none", 
+                                color: item.complete ? "green": "red" 
+                            }} 
+                            {
+                            ...(removeItem && { onClick:() => toggleItem(item)  }) 
+                            }
+                        >
+                            {item.todoName||item.goalName}
+                        </span>
                         {removeItem && <button onClick={() => removeItem(item)}>X</button>}
                     </li>
                 )}))}
