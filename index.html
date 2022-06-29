@@ -7,6 +7,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.0/redux.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js"></script>
     <script src='https://unpkg.com/babel-standalone@6.15.0/babel.min.js'></script>
    <script src="app.js" defer></script> 
 </head>
@@ -39,7 +40,9 @@
         }
 
         function Todos(props) {
-            const { dispatch, todos } = props
+
+            const { todos } = ReactRedux.useSelector((state) => state )
+            const dispatch = ReactRedux.useDispatch()
 
             const inputRef = React.useRef(null);
             const addTodo = (e) => {
@@ -63,7 +66,10 @@
                 </div>
             );
         }
-        function Goals({ dispatch, goals }) {
+        function Goals() {
+
+            const { goals } = ReactRedux.useSelector((state) => state )
+            const dispatch = ReactRedux.useDispatch()
 
             const inputRef = React.useRef(null);
             const addGoal = (e) => {
@@ -98,53 +104,95 @@
                 </div>
             );
         }
-        function App({ store }) {
-            const { todos, goals } = store.getState()
-            const [state, setState] = React.useState({
-                todos, 
-                goals
-            })
+        function App() {
+
+            return (
+                <div>
+                    <Todos  />
+                    <Goals />
+                    <hr />
+                </div>
+            );
+        }
+
+        const Context = React.createContext() //
+
+        ReactDOM.render(<ReactRedux.Provider store={store}><App  /></ReactRedux.Provider>, document.querySelector('#app'));
+
+        function Provider({ children, store }){
+            return <Context.Provider value={store}>
+                {children}
+            </Context.Provider>
+        }
+
+        //custom Hook
+        function useDispatch(){
+            const store = React.useContext(Context)
+            return store.dispatch
+        }
+
+        //custom Hook
+        function useSelector(mapStateToProps){
+            const store =  React.useContext(Context)
+            const [state, setState] = React.useState(store.getState())
 
             React.useEffect(() => {
                 
                 store.subscribe(() => {
-                    const { todos, goals } = store.getState()
-
-                    setState({
-                        todos, 
-                        goals
-                    })
+                    setState(store.getState())
                 })
                 return () => {
                     store.unsubscribe();
                 }
             }, [])
 
-            return (
-                <div>
-                    <Todos todos={state.todos} dispatch={store.dispatch} />
-                    <Goals goals={state.goals} dispatch={store.dispatch}/>
-                </div>
-            );
+            return mapStateToProps(state)
         }
 
-        ReactDOM.render(<App store={store} />, document.querySelector('#app'));
-    </script>
 
-<hr />
-    <!-- For our Todos-->
-   <!-- <div>
-       <h1>Todos</h1>
-       <input placeholder="Add a todo" id="todo-Input" />
-       <button type="button" id="add-todo-btn">Click Me!</button>
-       <ul id="todos"></ul>
-   </div> -->
-<!--    &lt;!&ndash; For our Goals&ndash;&gt;-->
-   <!-- <div>
-       <h1>Goals</h1>
-       <input placeholder="Add a goal" id="goal-Input" />
-       <button type="button" id="add-goal-btn">Click Me!</button>
-       <ul id="goals"></ul>
-   </div> -->
+
+ /*       function UnderstandingReactContext(){
+            const name = "Chidi"
+
+            return <Context.Provider value={{
+                name,
+                calll: () => { console.log("heeeeee") }
+            }}>
+                <Parent />
+            </Context.Provider>
+            
+        }
+
+        function Parent(){
+            return (
+                <div>
+                    <h1>Parent</h1>
+                    <Child  />
+                </div>
+            )
+        }
+
+        function Child(){
+            return (
+                <div>
+                    <h1>Child</h1>
+                    <GrandChild  />
+                </div>
+            )
+        }
+
+        function GrandChild(){
+            const value = React.useContext(Context)
+            //console.log(value.calll())
+            return (
+                <div>
+                    <h1>GrandChild</h1>
+                    <h3>name: {value.name}</h3>
+                </div>
+            )
+        }*/
+
+ 
+    </script>
 </body>
 </html>
