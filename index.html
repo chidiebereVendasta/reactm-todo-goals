@@ -7,6 +7,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.0/redux.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js"></script>
     <script src='https://unpkg.com/babel-standalone@6.15.0/babel.min.js'></script>
    <script src="app.js" defer></script> 
 </head>
@@ -28,6 +29,8 @@
             </ul>
         }
 
+        //Presentational Componenent
+        //They are concernd with how this look
         function Todos(props) {
             const { dispatch, todos } = props
 
@@ -89,52 +92,78 @@
             );
         }
         function App({ store }) {
-            const { todos, goals } = store.getState()
-            const [state, setState] = React.useState({
-                todos, 
-                goals
-            })
-
-            React.useEffect(() => {
-                
-                store.subscribe(() => {
-                    const { todos, goals } = store.getState()
-
-                    setState({
-                        todos, 
-                        goals
-                    })
-                })
-                return () => {
-                    store.unsubscribe();
-                }
-            }, [])
+ 
 
             return (
                 <div>
-                    <Todos todos={state.todos} dispatch={store.dispatch} />
-                    <Goals goals={state.goals} dispatch={store.dispatch}/>
+                    <ConnectedTodos />
+                    <ConnectedGoals  />
                 </div>
             );
         }
 
-        ReactDOM.render(<App store={store} />, document.querySelector('#app'));
-    </script>
+        /* Start Library Code*/
+        const Context = React.createContext()
 
-<hr />
-    <!-- For our Todos-->
-   <div>
-       <h1>Todos</h1>
-       <input placeholder="Add a todo" id="todo-Input" />
-       <button type="button" id="add-todo-btn">Click Me!</button>
-       <ul id="todos"></ul>
-   </div>
-<!--    &lt;!&ndash; For our Goals&ndash;&gt;-->
-   <div>
-       <h1>Goals</h1>
-       <input placeholder="Add a goal" id="goal-Input" />
-       <button type="button" id="add-goal-btn">Click Me!</button>
-       <ul id="goals"></ul>
-   </div>
+        function connect(mapStateToProps){
+            return (Component) => {
+
+                //Container Component
+                //Container Component are concerned with how things work
+                const Receiver = (props) => {
+                    const { getState, dispatch, subscribe } = props.store
+                    const [state, setState] = React.useState(getState())
+
+                    React.useEffect(() => {
+                
+                        const unSubscribe = subscribe(() => {
+                            setState(store.getState())
+                        })
+                        //run code here when the component unmounts
+                        return () => {
+                            unsubscribe();
+                        }
+                    }, [])
+
+                    const stateNeeded = React.useMemo(() => mapStateToProps(state), [state])
+                    return (
+                        <Component { ...stateNeeded }  dispatch={dispatch}/>
+                    )
+                }
+
+                //Container Component
+                const ConnectedComponent = () => {
+                    return (
+                        <Context.Consumer>
+                        {(store) => {
+                            return <Receiver store={store} />
+                        }}
+                        </Context.Consumer>
+                    )
+                }
+
+                return ConnectedComponent
+            }
+        }
+
+        function Provider({store, children}){
+            return (
+                <Context.Provider value={store} >
+                    {children}
+                </Context.Provider>
+            )
+        }
+        /* Endt Library Code*/
+
+        /* Currying: Where you have functions that return funtions*/
+        const ConnectedGoals = ReactRedux.connect((store) => {
+            return {
+                goals: store.goals
+            }
+        })(Goals)
+        const ConnectedTodos = ReactRedux.connect((store) => ({ todos: store.todos}))(Todos)
+
+        ReactDOM.render(<ReactRedux.Provider store={store}><App /></ReactRedux.Provider>, document.querySelector('#app'));
+    </script>
 </body>
 </html>
